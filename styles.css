@@ -1,0 +1,16 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  background: #0d0d12;
+  color: #eaeaf0;
+  display: grid;
+  place-items: center;
+}
+
+main { text-align: center; padding: 2rem; }
+
+h1 { margin-bottom: 0.5rem; }
+
+p { color: #8888a0; }
