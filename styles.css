@@ -104,6 +104,7 @@ a { color: var(--text); text-decoration: none; }
   grid-template-columns: 1fr 380px;
   gap: 0;
   min-height: calc(100vh - 60px);
+  align-items: start;
 }
 
 @media (max-width: 960px) {
@@ -114,6 +115,9 @@ a { color: var(--text); text-decoration: none; }
   display: flex;
   flex-direction: column;
   padding: 1.5rem 2rem 2rem;
+  position: sticky;
+  top: 60px;
+  align-self: start;
 }
 
 .canvas-toolbar {
@@ -156,10 +160,11 @@ a { color: var(--text); text-decoration: none; }
 /* Canvas stage */
 .canvas-stage {
   position: relative;
-  flex: 1;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
   min-height: 420px;
+  width: 100%;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -181,6 +186,7 @@ a { color: var(--text); text-decoration: none; }
   display: grid;
   place-items: center;
   padding: 2.5rem;
+  width: 100%;
 }
 
 .preview canvas {
@@ -271,7 +277,8 @@ a { color: var(--text); text-decoration: none; }
   z-index: 10;
   cursor: grab;
   touch-action: none;
-  transition: box-shadow 0.15s ease;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .logo-handle.is-dragging {
@@ -289,18 +296,17 @@ a { color: var(--text); text-decoration: none; }
 }
 
 .logo-handle__ring {
+  display: none;
   position: absolute;
-  inset: -3px;
-  border: 2px solid var(--accent);
+  inset: -4px;
+  border: 2px dashed var(--accent);
   border-radius: inherit;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 0 20px var(--accent-glow);
+  box-shadow: 0 0 18px var(--accent-glow);
   pointer-events: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .logo-handle.is-dragging .logo-handle__ring {
-  border-color: #a29bfe;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 0 28px var(--accent-glow);
+  display: block;
 }
 
 .snap-label {
@@ -451,6 +457,164 @@ input[type="color"] {
   padding: 4px;
   background: var(--surface);
   cursor: pointer;
+}
+
+.preset-picker,
+.template-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.preset-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.preset-card.is-active {
+  border-color: rgba(108, 92, 231, 0.65);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.preset-card__swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background:
+    linear-gradient(135deg, var(--preset-bg) 42%, transparent 42%),
+    repeating-linear-gradient(
+      90deg,
+      var(--preset-fg) 0 4px,
+      transparent 4px 8px
+    ),
+    repeating-linear-gradient(
+      var(--preset-fg) 0 4px,
+      transparent 4px 8px
+    ),
+    var(--preset-bg);
+  background-size: 100% 100%, 8px 8px, 8px 8px, 100% 100%;
+  background-position: 0 0, 100% 0, 100% 0, 0 0;
+}
+
+.preset-card__name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.template-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.template-card.is-active {
+  border-color: rgba(108, 92, 231, 0.65);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.template-card__preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.template-card__name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.panel-intro {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.template-card__preview--none {
+  background:
+    linear-gradient(var(--border-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-strong) 1px, transparent 1px),
+    #14141a;
+  background-size: 14px 14px;
+}
+
+.template-card__preview--light { background: linear-gradient(145deg, #ffffff 60%, #e5e7eb); }
+.template-card__preview--dark { background: linear-gradient(145deg, #14141a 55%, #2d2d3a); }
+
+.template-card__preview--waves {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(129, 140, 248, 0.45), transparent 55%),
+    repeating-radial-gradient(circle at 50% 100%, transparent 0 8px, rgba(79, 70, 229, 0.18) 8px 10px),
+    #f8fafc;
+}
+
+.template-card__preview--rings {
+  background:
+    repeating-radial-gradient(circle at 45% 42%, transparent 0 7px, rgba(13, 148, 136, 0.22) 7px 9px),
+    #ecfdf5;
+}
+
+.template-card__preview--lattice {
+  background:
+    linear-gradient(32deg, rgba(234, 88, 12, 0.18) 1px, transparent 1px),
+    linear-gradient(-32deg, rgba(253, 186, 116, 0.35) 1px, transparent 1px),
+    #fff7ed;
+  background-size: 12px 12px;
+}
+
+.template-card__preview--spiral {
+  background:
+    conic-gradient(from 200deg at 54% 52%, transparent 0deg, rgba(99, 102, 241, 0.45) 280deg, transparent 360deg),
+    radial-gradient(circle at 54% 52%, rgba(99, 102, 241, 0.25) 0 3px, transparent 3px 100%),
+    #eef2ff;
+  background-size: 100% 100%, 14px 14px, 100% 100%;
+}
+
+.template-card__preview--contours {
+  background:
+    repeating-radial-gradient(ellipse at 40% 45%, transparent 0 5px, rgba(2, 132, 199, 0.2) 5px 7px),
+    repeating-radial-gradient(ellipse at 62% 58%, transparent 0 8px, rgba(125, 211, 252, 0.3) 8px 10px),
+    repeating-radial-gradient(ellipse at 50% 50%, transparent 0 11px, rgba(2, 132, 199, 0.12) 11px 13px),
+    #f0f9ff;
 }
 
 .color-grid {
@@ -866,7 +1030,16 @@ input[type="range"]::-moz-range-thumb {
   .qr-card { grid-template-columns: 1fr; text-align: center; }
 }
 
+.qr-card__thumb {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
 .qr-card__thumb canvas {
+  display: block;
+  width: 120px;
+  height: 120px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
