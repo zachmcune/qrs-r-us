@@ -21,7 +21,7 @@ async function init() {
   }
 
   authStatus.innerHTML = `
-    <a href="index.html" class="btn btn--ghost btn--small">Create</a>
+    <a href="editor.html" class="btn btn--ghost btn--small">Create</a>
     <span class="auth-email">${user.email}</span>
     <button type="button" id="logout-btn" class="btn btn--ghost btn--small">Sign out</button>`;
   document.getElementById("logout-btn").addEventListener("click", async () => {
@@ -62,7 +62,7 @@ async function loadQrCodes() {
           <p class="muted">${escapeHtml(qr.targetUrl)}</p>
         </div>
         <div class="qr-card__actions">
-          <a class="btn btn--ghost" href="index.html?id=${qr.id}">Edit</a>
+          <a class="btn btn--ghost" href="editor.html?id=${qr.id}">Edit</a>
           <button type="button" class="btn btn--danger" data-delete="${qr.id}">Delete</button>
         </div>
       `;

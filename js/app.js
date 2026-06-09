@@ -179,7 +179,7 @@ async function refreshAuth() {
     document.getElementById("logout-btn")?.addEventListener("click", handleLogout);
     saveBtn.disabled = false;
   } else {
-    authStatus.innerHTML = `<a href="login.html" class="btn btn--primary btn--small">Sign in to save</a>`;
+    authStatus.innerHTML = `<a href="login.html?next=editor.html" class="btn btn--primary btn--small">Sign in to save</a>`;
     saveBtn.disabled = true;
   }
 }
@@ -331,7 +331,7 @@ async function renderPreview(skipLogo = false) {
 }
 
 async function handleSave() {
-  if (!user) return (location.href = "login.html");
+  if (!user) return (location.href = "login.html?next=editor.html");
 
   const name = form.name.value.trim();
   const targetUrl = normalizeUrl(form.targetUrl.value);
