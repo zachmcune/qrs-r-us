@@ -95,32 +95,77 @@
 
           <div class="field field--range">
             <div class="field__row">
-              <label>Logo size</label>
+              <label for="logoSize">Logo size</label>
               <span class="field__value" data-for="logoSize">22%</span>
             </div>
-            <input type="range" name="logoSize" min="10" max="35" value="22">
-          </div>
-          <div class="field field--range">
-            <div class="field__row">
-              <label>Border width</label>
-              <span class="field__value" data-for="logoBorderWidth">6</span>
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>Small</span>
+                <span>Large</span>
+              </div>
+              <input type="range" id="logoSize" name="logoSize" min="10" max="35" value="22" aria-valuetext="22%">
             </div>
-            <input type="range" name="logoBorderWidth" min="0" max="16" value="6">
           </div>
           <div class="field field--range">
             <div class="field__row">
-              <label>Corner roundness</label>
+              <label for="logoBorderWidth">Border width</label>
+              <span class="field__value" data-for="logoBorderWidth">6px</span>
+            </div>
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>None</span>
+                <span>Thick</span>
+              </div>
+              <input type="range" id="logoBorderWidth" name="logoBorderWidth" min="0" max="16" value="6" aria-valuetext="6 pixels">
+            </div>
+          </div>
+          <div class="field field--range">
+            <div class="field__row">
+              <label for="logoBorderRadius">Corner roundness</label>
               <span class="field__value" data-for="logoBorderRadius">20%</span>
             </div>
-            <input type="range" name="logoBorderRadius" min="0" max="50" value="20">
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>Square</span>
+                <span>Round</span>
+              </div>
+              <input type="range" id="logoBorderRadius" name="logoBorderRadius" min="0" max="50" value="20" aria-valuetext="20%">
+            </div>
           </div>
           <div class="field field--color">
             <label>Border color</label>
             <input type="color" name="logoBorderColor" value="#ffffff">
           </div>
 
-          <input type="range" name="logoOffsetX" min="-50" max="50" value="0" hidden>
-          <input type="range" name="logoOffsetY" min="-50" max="50" value="0" hidden>
+          <div id="position-controls" class="position-controls" hidden>
+            <p class="position-controls__intro">Drag the logo on the preview, or use these sliders to nudge it from center.</p>
+            <div class="field field--range">
+              <div class="field__row">
+                <label for="logoOffsetX">Horizontal position</label>
+                <span class="field__value" data-for="logoOffsetX">Centered</span>
+              </div>
+              <div class="range-control range-control--centered">
+                <span class="range-control__end">Left</span>
+                <div class="range-control__track">
+                  <input type="range" id="logoOffsetX" class="range--centered" name="logoOffsetX" min="-50" max="50" value="0" aria-valuetext="Centered">
+                </div>
+                <span class="range-control__end">Right</span>
+              </div>
+            </div>
+            <div class="field field--range">
+              <div class="field__row">
+                <label for="logoOffsetY">Vertical position</label>
+                <span class="field__value" data-for="logoOffsetY">Centered</span>
+              </div>
+              <div class="range-control range-control--centered">
+                <span class="range-control__end">Up</span>
+                <div class="range-control__track">
+                  <input type="range" id="logoOffsetY" class="range--centered" name="logoOffsetY" min="-50" max="50" value="0" aria-valuetext="Centered">
+                </div>
+                <span class="range-control__end">Down</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="panel-style" class="tab-panel" role="tabpanel">

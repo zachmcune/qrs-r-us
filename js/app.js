@@ -33,6 +33,8 @@ let lastSvg = null;
 let isDraggingLogo = false;
 
 const editId = new URLSearchParams(location.search).get("id");
+const RENDER_SIZE = 512;
+const positionControls = document.getElementById("position-controls");
 
 const logoEditor = createLogoEditor({
   stage,
@@ -43,7 +45,7 @@ const logoEditor = createLogoEditor({
     isDraggingLogo = dragging;
     form.logoOffsetX.value = offsetX;
     form.logoOffsetY.value = offsetY;
-    setupRangeLabels();
+    updateAllRanges();
     scheduleRender(dragging);
   },
 });
@@ -54,7 +56,7 @@ async function init() {
   populateSelects();
   applyConfigToForm(form, defaults);
   setupTabs();
-  setupRangeLabels();
+  initRangeControls();
   await refreshAuth();
 
   if (editId && !user) {
@@ -82,19 +84,69 @@ function setupTabs() {
   });
 }
 
-function setupRangeLabels() {
+function offsetToPixels(value) {
+  return Math.round((Number(value) / 100) * RENDER_SIZE * 0.5);
+}
+
+function formatOffsetLabel(axis, value) {
+  const px = offsetToPixels(value);
+  if (px === 0) return "Centered";
+  if (axis === "x") return px > 0 ? `${px}px right of center` : `${Math.abs(px)}px left of center`;
+  return px > 0 ? `${px}px below center` : `${Math.abs(px)}px above center`;
+}
+
+function updateRangeTrack(input) {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const val = Number(input.value);
+  const pct = ((val - min) / (max - min)) * 100;
+
+  if (input.classList.contains("range--centered")) {
+    const center = ((0 - min) / (max - min)) * 100;
+    if (val >= 0) {
+      input.style.setProperty("--range-fill-start", `${center}%`);
+      input.style.setProperty("--range-fill-end", `${pct}%`);
+    } else {
+      input.style.setProperty("--range-fill-start", `${pct}%`);
+      input.style.setProperty("--range-fill-end", `${center}%`);
+    }
+    return;
+  }
+
+  input.style.setProperty("--range-percent", `${pct}%`);
+}
+
+function updateRangeDisplay(input) {
+  const label = document.querySelector(`[data-for="${input.name}"]`);
+  const val = Number(input.value);
+
+  if (label) {
+    if (input.name === "logoSize") label.textContent = `${input.value}%`;
+    else if (input.name === "logoOffsetX") label.textContent = formatOffsetLabel("x", val);
+    else if (input.name === "logoOffsetY") label.textContent = formatOffsetLabel("y", val);
+    else if (input.name === "logoBorderRadius") label.textContent = `${input.value}%`;
+    else if (input.name === "logoBorderWidth") label.textContent = `${input.value}px`;
+    else label.textContent = input.value;
+  }
+
+  input.setAttribute("aria-valuetext", label?.textContent || input.value);
+  updateRangeTrack(input);
+}
+
+function initRangeControls() {
   form.querySelectorAll('input[type="range"]').forEach((input) => {
-    const label = document.querySelector(`[data-for="${input.name}"]`);
-    const update = () => {
-      if (!label) return;
-      if (input.name === "logoSize") label.textContent = `${input.value}%`;
-      else if (input.name.includes("Offset")) label.textContent = `${input.value}`;
-      else if (input.name === "logoBorderRadius") label.textContent = `${input.value}%`;
-      else label.textContent = input.value;
-    };
-    input.addEventListener("input", update);
-    update();
+    if (input.dataset.rangeBound) return;
+    input.dataset.rangeBound = "true";
+    input.addEventListener("input", () => {
+      updateRangeDisplay(input);
+      if (input.name?.includes("Offset") && !isDraggingLogo) scheduleRender(false);
+    });
+    updateRangeDisplay(input);
   });
+}
+
+function updateAllRanges() {
+  form.querySelectorAll('input[type="range"]').forEach(updateRangeDisplay);
 }
 
 function populateSelects() {
@@ -150,7 +202,7 @@ async function loadExisting(id) {
     updateUploadZone();
     saveBtn.textContent = "Save changes";
     document.title = `Edit ${qrCode.name} — QR's R Us`;
-    setupRangeLabels();
+    updateAllRanges();
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -158,9 +210,8 @@ async function loadExisting(id) {
 
 function bindEvents() {
   form.addEventListener("input", (e) => {
-    if (e.target.name?.includes("Offset") && !isDraggingLogo) scheduleRender(false);
-    else if (!e.target.name?.includes("Offset")) scheduleRender(false);
-    setupRangeLabels();
+    if (e.target.type === "range" && e.target.name?.includes("Offset")) return;
+    scheduleRender(false);
   });
   form.addEventListener("change", () => scheduleRender(false));
 
@@ -193,7 +244,7 @@ function bindEvents() {
     form.logoOffsetX.value = 0;
     form.logoOffsetY.value = 0;
     logoEditor.center();
-    setupRangeLabels();
+    updateAllRanges();
   });
 
   saveBtn.addEventListener("click", handleSave);
@@ -216,6 +267,7 @@ function updateUploadZone() {
   uploadZone.classList.toggle("has-logo", hasLogo);
   clearLogoBtn.hidden = !hasLogo;
   centerLogoBtn.hidden = !hasLogo;
+  positionControls.hidden = !hasLogo;
   if (hasLogo) {
     preview.src = logoDataUrl;
     preview.hidden = false;
@@ -264,10 +316,10 @@ async function renderPreview(skipLogo = false) {
     : config;
 
   try {
-    const canvas = await renderQr(targetUrl, renderConfig, 512);
+    const canvas = await renderQr(targetUrl, renderConfig, RENDER_SIZE);
     lastCanvas = canvas;
     if (!isDraggingLogo) {
-      lastSvg = await renderQrSvg(targetUrl, config, 512);
+      lastSvg = await renderQrSvg(targetUrl, config, RENDER_SIZE);
     }
 
     preview.innerHTML = "";
