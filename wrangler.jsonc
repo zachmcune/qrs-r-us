@@ -7,13 +7,7 @@
 		{
 			"binding": "DB",
 			"database_name": "qrs-r-us",
-			"database_id": "local-dev-placeholder"
+			"database_id": "83baa2cf-bea3-469c-846f-338ee2d3843a"
 		},
-		{
-			"binding": "qrs_r_us",
-			"database_name": "qrs-r-us",
-			"database_id": "83baa2cf-bea3-469c-846f-338ee2d3843a",
-			"remote": true
-		}
 	]
 }
