@@ -1,42 +1,35 @@
-# New Project
+# QR's R Us
 
-Blank starter for your next site.
+Create customized QR codes with logos, colors, and styles. Save to your account, edit anytime, and download as PNG, SVG, or PDF.
 
-## 1. Open in Cursor
+## Features
 
-```bash
-cd ~/GitRepos/starter-project
-cursor .
-```
+- Website URL QR codes with custom colors and dot styles
+- Logo upload with resize, reposition, rounded-square crop, and border
+- Adjustable error correction (L / M / Q / H)
+- Export as PNG, SVG, or PDF
+- Sign in to save and manage QR codes
 
-## 2. Create a GitHub repo
-
-On GitHub: **New repository** → name it (e.g. `my-new-app`) → create empty repo.
-
-Then in this folder:
+## Local development
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/my-new-app.git
-git push -u origin main
+npm install
+npm run db:local
+npm run dev
 ```
 
-## 3. Deploy on Cloudflare Pages
+Open http://localhost:8788
 
-1. [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create application** → **Pages**
-2. **Connect to Git** → pick your new repo
+## Deploy on Cloudflare Pages
+
+1. Push this repo to GitHub
+2. **Workers & Pages** → **Create** → **Pages** → connect the repo
 3. Build settings:
-   - **Build command:** (empty)
+   - **Build command:** `npm install`
    - **Build output directory:** `/`
-4. **Save and Deploy**
+4. Add a **D1** database binding named `DB` (database: `qrs-r-us`)
+5. Run the schema against production:
 
-Your new site gets its own `*.pages.dev` URL, separate from Productivity Hub.
-
-## Productivity Hub (saved separately)
-
-Your finished app lives in `~/GitRepos/Test` and deploys from:
-
-https://github.com/zachmcune/productivity
+   ```bash
+   npm run db:migrate
+   ```
