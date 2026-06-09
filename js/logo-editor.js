@@ -1,9 +1,27 @@
 const SNAP_THRESHOLD = 5;
 
+function normalizeQrRegion(region, canvas) {
+  if (!canvas) return { x: 0, y: 0, width: 0, height: 0 };
+  if (!region) {
+    return { x: 0, y: 0, width: canvas.width, height: canvas.height };
+  }
+
+  const width = region.width ?? region.size ?? canvas.width;
+  const height = region.height ?? region.size ?? canvas.height;
+  return {
+    x: region.x ?? 0,
+    y: region.y ?? 0,
+    width,
+    height,
+  };
+}
+
 export function createLogoEditor({ stage, handle, guides, snapLabel, onChange }) {
   let dragging = false;
   let dragOffset = { x: 0, y: 0 };
   let canvas = null;
+  let qrRegion = null;
+  let lastLogo = null;
 
   handle.addEventListener("pointerdown", (e) => {
     if (handle.hidden) return;
@@ -24,7 +42,7 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
   function onPointerMove(e) {
     if (!dragging || !canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const rect = getQrScreenRect();
     const centerX = e.clientX - dragOffset.x - rect.left;
     const centerY = e.clientY - dragOffset.y - rect.top;
 
@@ -41,7 +59,9 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
     if (snapped.y) offsetY = 0;
 
     showGuides(snapped);
-    placeHandle(offsetX, offsetY, parseFloat(handle.dataset.logoSize), parseFloat(handle.dataset.borderPad));
+    const borderPad = parseFloat(handle.dataset.borderPad);
+    placeHandle(offsetX, offsetY, parseFloat(handle.dataset.logoSize), borderPad);
+    if (lastLogo) applyHandleBorder(lastLogo, borderPad);
     onChange({ offsetX, offsetY, dragging: true });
   }
 
@@ -62,19 +82,33 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
     onChange({ offsetX, offsetY, dragging: false });
   }
 
+  function getQrScreenRect() {
+    if (!canvas) return { left: 0, top: 0, width: 0, height: 0 };
+    const canvasRect = canvas.getBoundingClientRect();
+    const region = normalizeQrRegion(qrRegion, canvas);
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+    return {
+      left: canvasRect.left + region.x * scaleX,
+      top: canvasRect.top + region.y * scaleY,
+      width: region.width * scaleX,
+      height: region.height * scaleY,
+    };
+  }
+
   function placeHandle(offsetX, offsetY, logoSize, borderPad) {
     if (!canvas) return;
     const stageRect = stage.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+    const qrRect = getQrScreenRect();
     const pad = borderPad || 0;
     const total = logoSize + pad * 2;
     const centerX = 0.5 + (offsetX / 100) * 0.5;
     const centerY = 0.5 + (offsetY / 100) * 0.5;
 
-    const w = total * canvasRect.width;
-    const h = total * canvasRect.height;
-    const left = canvasRect.left - stageRect.left + (centerX - total / 2) * canvasRect.width;
-    const top = canvasRect.top - stageRect.top + (centerY - total / 2) * canvasRect.height;
+    const w = total * qrRect.width;
+    const h = total * qrRect.height;
+    const left = qrRect.left - stageRect.left + (centerX - total / 2) * qrRect.width;
+    const top = qrRect.top - stageRect.top + (centerY - total / 2) * qrRect.height;
 
     handle.style.width = `${w}px`;
     handle.style.height = `${h}px`;
@@ -87,11 +121,11 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
   function placeGuides() {
     if (!canvas) return;
     const stageRect = stage.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    guides.style.left = `${canvasRect.left - stageRect.left}px`;
-    guides.style.top = `${canvasRect.top - stageRect.top}px`;
-    guides.style.width = `${canvasRect.width}px`;
-    guides.style.height = `${canvasRect.height}px`;
+    const qrRect = getQrScreenRect();
+    guides.style.left = `${qrRect.left - stageRect.left}px`;
+    guides.style.top = `${qrRect.top - stageRect.top}px`;
+    guides.style.width = `${qrRect.width}px`;
+    guides.style.height = `${qrRect.height}px`;
   }
 
   function showGuides(snapped) {
@@ -108,28 +142,60 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
     guides.classList.remove("is-visible", "is-snapped");
   }
 
+  function applyHandleBorder(logo, borderPad) {
+    const img = handle.querySelector("img");
+    const qrRect = getQrScreenRect();
+    const borderPx = Math.max(0, borderPad * qrRect.width);
+
+    if (borderPx > 0) {
+      handle.style.backgroundColor = logo.borderColor || "#ffffff";
+      handle.style.border = "none";
+      img.style.position = "absolute";
+      img.style.left = `${borderPx}px`;
+      img.style.top = `${borderPx}px`;
+      img.style.width = `calc(100% - ${borderPx * 2}px)`;
+      img.style.height = `calc(100% - ${borderPx * 2}px)`;
+    } else {
+      handle.style.backgroundColor = "transparent";
+      handle.style.border = "none";
+      img.style.position = "";
+      img.style.left = "";
+      img.style.top = "";
+      img.style.width = "100%";
+      img.style.height = "100%";
+    }
+  }
+
   return {
-    sync(config, canvasEl) {
+    sync(config, canvasEl, region = null) {
       canvas = canvasEl;
+      qrRegion = region;
+      const normalized = normalizeQrRegion(region, canvasEl);
+      const qrWidth = normalized.width || 1;
       if (!config.logo?.dataUrl || !canvas) {
         handle.hidden = true;
         hideGuides();
         return;
       }
 
+      lastLogo = config.logo;
       handle.hidden = false;
-      handle.querySelector("img").src = config.logo.dataUrl;
+      const img = handle.querySelector("img");
+      img.src = config.logo.dataUrl;
       handle.dataset.logoSize = config.logo.size;
-      handle.dataset.borderPad = (config.logo.borderWidth || 0) / canvas.width;
+      handle.dataset.borderPad = (config.logo.borderWidth || 0) / qrWidth;
       handle.style.borderRadius = `${config.logo.borderRadius * 100}%`;
 
       const offsetX = Math.round(config.logo.offsetX * 100);
       const offsetY = Math.round(config.logo.offsetY * 100);
-      placeHandle(offsetX, offsetY, config.logo.size, (config.logo.borderWidth || 0) / canvas.width);
+      const borderPad = (config.logo.borderWidth || 0) / qrWidth;
+      placeHandle(offsetX, offsetY, config.logo.size, borderPad);
+      applyHandleBorder(config.logo, borderPad);
       placeGuides();
     },
 
     center() {
+      placeHandle(0, 0, parseFloat(handle.dataset.logoSize), parseFloat(handle.dataset.borderPad));
       onChange({ offsetX: 0, offsetY: 0, dragging: false });
       if (snapLabel) {
         snapLabel.textContent = "Centered";

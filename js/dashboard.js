@@ -1,5 +1,10 @@
 import { api } from "./api.js";
-import { renderQr } from "./qr.js";
+import { renderQr, normalizeConfig, defaults } from "./qr.js";
+import { composeCard, getCardContentBounds, isCardEnabled } from "./card.js";
+import { getTemplate } from "./templates.js";
+
+const THUMB_SIZE = 120;
+const THUMB_CARD_QR_SIZE = 140;
 
 const listEl = document.getElementById("qr-list");
 const emptyEl = document.getElementById("empty-state");
@@ -51,7 +56,7 @@ async function loadQrCodes() {
       const thumb = document.createElement("div");
       thumb.className = "qr-card__thumb";
       try {
-        thumb.appendChild(await renderQr(qr.targetUrl, qr.config, 120));
+        thumb.appendChild(await renderThumb(qr.targetUrl, qr.config));
       } catch {
         thumb.textContent = "Preview unavailable";
       }
@@ -77,6 +82,62 @@ async function loadQrCodes() {
   } catch (err) {
     listEl.innerHTML = `<p class="message message--error">${escapeHtml(err.message)}</p>`;
   }
+}
+
+function prepareConfig(raw) {
+  const normalized = normalizeConfig({ ...raw });
+  const card = normalized.card
+    ? { ...defaults.card, ...normalized.card }
+    : { ...defaults.card, enabled: false, template: "none" };
+
+  return {
+    ...defaults,
+    ...normalized,
+    card,
+    logo: { ...defaults.logo, ...normalized.logo },
+  };
+}
+
+function cropAndFillSquare(source, crop, size, backdrop = "#14141a") {
+  const thumb = document.createElement("canvas");
+  thumb.width = size;
+  thumb.height = size;
+  const ctx = thumb.getContext("2d");
+  ctx.fillStyle = backdrop;
+  ctx.fillRect(0, 0, size, size);
+
+  const scale = Math.max(size / crop.width, size / crop.height);
+  const w = crop.width * scale;
+  const h = crop.height * scale;
+  ctx.drawImage(
+    source,
+    crop.x, crop.y, crop.width, crop.height,
+    (size - w) / 2, (size - h) / 2, w, h
+  );
+  return thumb;
+}
+
+async function renderThumb(targetUrl, rawConfig) {
+  const config = prepareConfig(rawConfig);
+  const cardActive = isCardEnabled(config.card);
+  const backdrop = cardActive
+    ? getTemplate(config.card.template).palette?.base || config.backgroundColor
+    : config.backgroundColor;
+
+  if (!cardActive) {
+    const qrCanvas = await renderQr(targetUrl, config, THUMB_SIZE);
+    return cropAndFillSquare(
+      qrCanvas,
+      { x: 0, y: 0, width: qrCanvas.width, height: qrCanvas.height },
+      THUMB_SIZE,
+      backdrop
+    );
+  }
+
+  const qrCanvas = await renderQr(targetUrl, config, THUMB_CARD_QR_SIZE);
+  const composed = composeCard(qrCanvas, config);
+  const crop = getCardContentBounds(composed.layout, config.card);
+  return cropAndFillSquare(composed.canvas, crop, THUMB_SIZE, backdrop);
 }
 
 async function deleteQr(id) {
