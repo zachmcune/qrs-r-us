@@ -1,13 +1,19 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "qrs-r-us",
-  "compatibility_date": "2026-03-01",
-  "pages_build_output_dir": ".",
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "qrs-r-us",
-      "database_id": "local-dev-placeholder"
-    }
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "qrs-r-us",
+	"compatibility_date": "2026-03-01",
+	"pages_build_output_dir": ".",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "qrs-r-us",
+			"database_id": "local-dev-placeholder"
+		},
+		{
+			"binding": "qrs_r_us",
+			"database_name": "qrs-r-us",
+			"database_id": "83baa2cf-bea3-469c-846f-338ee2d3843a",
+			"remote": true
+		}
+	]
 }
