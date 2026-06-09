@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS logos (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content_hash TEXT NOT NULL,
-  r2_key TEXT NOT NULL,
+  content TEXT NOT NULL,
   mime_type TEXT NOT NULL,
   byte_size INTEGER NOT NULL,
   created_at INTEGER NOT NULL,

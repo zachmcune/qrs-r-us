@@ -9,11 +9,5 @@
 			"database_name": "qrs-r-us",
 			"database_id": "83baa2cf-bea3-469c-846f-338ee2d3843a"
 		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "LOGOS",
-			"bucket_name": "qrs-r-us-logos"
-		}
 	]
 }

@@ -10,13 +10,6 @@ const ALLOWED_TYPES = new Set([
   "image/svg+xml",
 ]);
 
-const EXT_BY_TYPE = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-  "image/svg+xml": "svg",
-};
-
 export async function onRequest(context) {
   const { request, env, params } = context;
   const opt = handleOptions(request);
@@ -63,17 +56,12 @@ async function handleUpload(request, env, user) {
     return json({ logo: formatLogoRow(existing) }, 200);
   }
 
-  const ext = EXT_BY_TYPE[mimeType] || "bin";
-  const r2Key = `${user.id}/${contentHash}.${ext}`;
-  await env.LOGOS.put(r2Key, bytes, {
-    httpMetadata: { contentType: mimeType },
-  });
-
   const logoId = id();
   const now = Date.now();
+  const content = bytesToBase64(bytes);
   await env.DB.prepare(
-    "INSERT INTO logos (id, user_id, content_hash, r2_key, mime_type, byte_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(logoId, user.id, contentHash, r2Key, mimeType, bytes.length, now).run();
+    "INSERT INTO logos (id, user_id, content_hash, content, mime_type, byte_size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(logoId, user.id, contentHash, content, mimeType, bytes.length, now).run();
 
   return json({
     logo: formatLogoRow({
@@ -90,14 +78,11 @@ async function handleGet(env, user, logoId) {
   if (authErr) return authErr;
 
   const row = await env.DB.prepare(
-    "SELECT id, r2_key, mime_type FROM logos WHERE id = ? AND user_id = ?"
+    "SELECT content, mime_type FROM logos WHERE id = ? AND user_id = ?"
   ).bind(logoId, user.id).first();
   if (!row) return error("Logo not found", 404);
 
-  const object = await env.LOGOS.get(row.r2_key);
-  if (!object) return error("Logo file missing", 404);
-
-  return new Response(object.body, {
+  return new Response(base64ToBytes(row.content), {
     status: 200,
     headers: {
       "Content-Type": row.mime_type,
@@ -114,6 +99,19 @@ function formatLogoRow(row) {
     byteSize: row.byte_size,
     createdAt: row.created_at,
   };
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function base64ToBytes(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 async function sha256Hex(bytes) {
