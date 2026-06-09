@@ -23,5 +23,17 @@ CREATE TABLE IF NOT EXISTS qr_codes (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS logos (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content_hash TEXT NOT NULL,
+  r2_key TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  byte_size INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(user_id, content_hash)
+);
+
 CREATE INDEX IF NOT EXISTS idx_qr_codes_user_id ON qr_codes(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_logos_user_id ON logos(user_id);

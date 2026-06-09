@@ -1,4 +1,5 @@
 import QRCodeStyling from "https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/+esm";
+import { getLogoSrc } from "./logo-utils.js";
 
 const DOT_STYLES = ["square", "dots", "rounded", "extra-rounded", "classy", "classy-rounded"];
 const CORNER_STYLES = ["square", "dot", "extra-rounded"];
@@ -12,7 +13,8 @@ export const defaults = {
   cornerDotStyle: "dot",
   errorCorrectionLevel: "H",
   logo: {
-    dataUrl: null,
+    logoId: null,
+    url: null,
     size: 0.22,
     offsetX: 0,
     offsetY: 0,
@@ -87,7 +89,8 @@ async function qrBaseCanvas(data, config, size) {
 
 async function drawLogoOnCanvas(canvas, config) {
   const { logo } = config;
-  if (!logo?.dataUrl) return canvas;
+  const logoSrc = getLogoSrc(logo);
+  if (!logoSrc) return canvas;
 
   const ctx = canvas.getContext("2d");
   const size = canvas.width;
@@ -98,7 +101,7 @@ async function drawLogoOnCanvas(canvas, config) {
   const y = centerY - logoSize / 2;
   const radius = logoSize * logo.borderRadius;
 
-  const img = await loadImage(logo.dataUrl);
+  const img = await loadImage(logoSrc);
 
   if (logo.borderWidth > 0) {
     const pad = logo.borderWidth;
@@ -161,7 +164,8 @@ export async function renderQrSvg(data, config, size = 512) {
   let svg = doc.documentElement;
   if (svg.querySelector("parsererror")) throw new Error("Failed to render SVG");
 
-  if (config.logo?.dataUrl) {
+  const logoSrc = getLogoSrc(config.logo);
+  if (logoSrc) {
     const { logo } = config;
     const logoSize = size * logo.size;
     const centerX = size / 2 + logo.offsetX * size * 0.5;
@@ -200,7 +204,7 @@ export async function renderQrSvg(data, config, size = 512) {
     clone.insertBefore(defs, clone.firstChild);
 
     const image = document.createElementNS(ns, "image");
-    image.setAttribute("href", logo.dataUrl);
+    image.setAttribute("href", logoSrc);
     image.setAttribute("x", x);
     image.setAttribute("y", y);
     image.setAttribute("width", logoSize);
@@ -214,7 +218,7 @@ export async function renderQrSvg(data, config, size = 512) {
   return svg;
 }
 
-export function readConfigFromForm(form, logoDataUrl = null) {
+export function readConfigFromForm(form, logoPreviewSrc = null, logoId = null) {
   return {
     foregroundColor: form.foregroundColor.value,
     backgroundColor: form.backgroundColor.value,
@@ -223,7 +227,8 @@ export function readConfigFromForm(form, logoDataUrl = null) {
     cornerDotStyle: form.cornerDotStyle.value,
     errorCorrectionLevel: form.errorCorrectionLevel.value,
     logo: {
-      dataUrl: logoDataUrl,
+      logoId,
+      url: logoPreviewSrc || (logoId ? `/api/logos/${logoId}` : null),
       size: Number(form.logoSize.value) / 100,
       offsetX: Number(form.logoOffsetX.value) / 100,
       offsetY: Number(form.logoOffsetY.value) / 100,

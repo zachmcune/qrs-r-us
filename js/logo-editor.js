@@ -1,3 +1,5 @@
+import { getLogoSrc } from "./logo-utils.js";
+
 const SNAP_THRESHOLD = 5;
 
 export function createLogoEditor({ stage, handle, guides, snapLabel, onChange }) {
@@ -111,14 +113,15 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
   return {
     sync(config, canvasEl) {
       canvas = canvasEl;
-      if (!config.logo?.dataUrl || !canvas) {
+      const logoSrc = getLogoSrc(config.logo);
+      if (!logoSrc || !canvas) {
         handle.hidden = true;
         hideGuides();
         return;
       }
 
       handle.hidden = false;
-      handle.querySelector("img").src = config.logo.dataUrl;
+      handle.querySelector("img").src = logoSrc;
       handle.dataset.logoSize = config.logo.size;
       handle.dataset.borderPad = (config.logo.borderWidth || 0) / canvas.width;
       handle.style.borderRadius = `${config.logo.borderRadius * 100}%`;

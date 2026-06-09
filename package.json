@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "npm run db:local && wrangler pages dev . --local --persist-to .wrangler/state",
     "db:local": "wrangler d1 execute qrs-r-us --local --persist-to .wrangler/state --file=schema.sql",
-    "db:migrate": "wrangler d1 execute qrs-r-us --file=schema.sql"
+    "db:migrate": "wrangler d1 execute qrs-r-us --remote --file=schema.sql",
+    "r2:create": "wrangler r2 bucket create qrs-r-us-logos"
   },
   "devDependencies": {
     "wrangler": "^4.14.0"

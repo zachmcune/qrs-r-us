@@ -51,7 +51,14 @@ async function createQrCode(request, env, user) {
   if (!targetUrl || !isValidUrl(targetUrl)) return error("Valid target URL is required");
   if (!config || typeof config !== "object") return error("Config is required");
 
-  const configStr = JSON.stringify(config);
+  let storedConfig;
+  try {
+    storedConfig = await prepareConfigForStorage(config, env, user.id);
+  } catch {
+    return error("Invalid logo", 400);
+  }
+
+  const configStr = JSON.stringify(storedConfig);
   if (configStr.length > MAX_CONFIG_SIZE) return error("Config too large (max 2MB)");
 
   const qrId = id();
@@ -99,7 +106,13 @@ async function updateQrCode(request, env, user, qrId) {
     values.push(targetUrl);
   }
   if (config !== undefined) {
-    const configStr = JSON.stringify(config);
+    let storedConfig;
+    try {
+      storedConfig = await prepareConfigForStorage(config, env, user.id);
+    } catch {
+      return error("Invalid logo", 400);
+    }
+    const configStr = JSON.stringify(storedConfig);
     if (configStr.length > MAX_CONFIG_SIZE) return error("Config too large (max 2MB)");
     updates.push("config = ?");
     values.push(configStr);
@@ -129,6 +142,27 @@ async function getOwnedQr(env, userId, qrId) {
   return env.DB.prepare(
     "SELECT id, name, target_url, config, created_at, updated_at FROM qr_codes WHERE id = ? AND user_id = ?"
   ).bind(qrId, userId).first();
+}
+
+async function prepareConfigForStorage(config, env, userId) {
+  const next = { ...config };
+  if (!next.logo) return next;
+
+  const logo = { ...next.logo };
+
+  if (!logo.logoId) {
+    next.logo = null;
+    return next;
+  }
+
+  const owned = await env.DB.prepare(
+    "SELECT id FROM logos WHERE id = ? AND user_id = ?"
+  ).bind(logo.logoId, userId).first();
+  if (!owned) throw new Error("INVALID_LOGO");
+
+  logo.url = `/api/logos/${logo.logoId}`;
+  next.logo = logo;
+  return next;
 }
 
 function formatQrRow(row) {

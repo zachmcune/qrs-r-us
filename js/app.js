@@ -11,6 +11,7 @@ import {
 } from "./qr.js";
 import { exportPng, exportSvg, exportPdf } from "./export.js";
 import { createLogoEditor } from "./logo-editor.js";
+import { prepareLogoFile, configForSave, getLogoSrc } from "./logo-utils.js";
 
 const form = document.getElementById("qr-form");
 const preview = document.getElementById("preview");
@@ -26,7 +27,8 @@ const snapLabel = document.getElementById("snap-label");
 
 let user = null;
 let savedQr = null;
-let logoDataUrl = null;
+let logoPreviewSrc = null;
+let logoId = null;
 let renderTimer = null;
 let lastCanvas = null;
 let lastSvg = null;
@@ -69,7 +71,7 @@ async function init() {
   bindEvents();
   scheduleRender(false);
   window.addEventListener("resize", () => {
-    if (lastCanvas) logoEditor.sync(readConfigFromForm(form, logoDataUrl), lastCanvas);
+    if (lastCanvas) logoEditor.sync(readConfigFromForm(form, logoPreviewSrc, logoId), lastCanvas);
   });
 }
 
@@ -198,7 +200,8 @@ async function loadExisting(id) {
     form.name.value = qrCode.name;
     form.targetUrl.value = qrCode.targetUrl;
     applyConfigToForm(form, qrCode.config);
-    logoDataUrl = qrCode.config.logo?.dataUrl || null;
+    logoId = qrCode.config.logo?.logoId || null;
+    logoPreviewSrc = getLogoSrc(qrCode.config.logo);
     updateUploadZone();
     saveBtn.textContent = "Save changes";
     document.title = `Edit ${qrCode.name} — QR's R Us`;
@@ -234,7 +237,8 @@ function bindEvents() {
   });
 
   clearLogoBtn.addEventListener("click", () => {
-    logoDataUrl = null;
+    logoPreviewSrc = null;
+    logoId = null;
     logoInput.value = "";
     updateUploadZone();
     scheduleRender(false);
@@ -254,14 +258,22 @@ function bindEvents() {
 }
 
 async function loadLogo(file) {
-  if (file.size > 500_000) return showToast("Logo must be under 500KB", "error");
-  logoDataUrl = await readFileAsDataUrl(file);
-  updateUploadZone();
-  scheduleRender(false);
+  if (!user) return showToast("Sign in to add a logo", "error");
+
+  try {
+    const prepared = await prepareLogoFile(file);
+    const { logo } = await api.uploadLogo(prepared);
+    logoId = logo.id;
+    logoPreviewSrc = logo.url;
+    updateUploadZone();
+    scheduleRender(false);
+  } catch (err) {
+    showToast(err.message, "error");
+  }
 }
 
 function updateUploadZone() {
-  const hasLogo = Boolean(logoDataUrl);
+  const hasLogo = Boolean(logoPreviewSrc);
   const preview = uploadZone.querySelector(".upload-zone__preview");
   const placeholder = uploadZone.querySelector(".upload-zone__placeholder");
   uploadZone.classList.toggle("has-logo", hasLogo);
@@ -269,7 +281,7 @@ function updateUploadZone() {
   centerLogoBtn.hidden = !hasLogo;
   positionControls.hidden = !hasLogo;
   if (hasLogo) {
-    preview.src = logoDataUrl;
+    preview.src = logoPreviewSrc;
     preview.hidden = false;
     placeholder.hidden = true;
   } else {
@@ -299,7 +311,7 @@ async function renderPreview(skipLogo = false) {
       <div class="empty-state__icon">◫</div>
       <p>Enter your website URL to begin</p>
     </div>`;
-    logoEditor.sync({ logo: { dataUrl: null } }, null);
+    logoEditor.sync({ logo: null }, null);
     return;
   }
 
@@ -310,9 +322,9 @@ async function renderPreview(skipLogo = false) {
     return;
   }
 
-  const config = readConfigFromForm(form, logoDataUrl);
-  const renderConfig = skipLogo && logoDataUrl
-    ? { ...config, logo: { ...config.logo, dataUrl: null } }
+  const config = readConfigFromForm(form, logoPreviewSrc, logoId);
+  const renderConfig = skipLogo && logoPreviewSrc
+    ? { ...config, logo: { ...config.logo, url: null } }
     : config;
 
   try {
@@ -335,7 +347,7 @@ async function handleSave() {
 
   const name = form.name.value.trim();
   const targetUrl = normalizeUrl(form.targetUrl.value);
-  const config = readConfigFromForm(form, logoDataUrl);
+  const config = readConfigFromForm(form, logoPreviewSrc, logoId);
 
   if (!name) return showToast("Give your QR code a name", "error");
   try {
@@ -343,10 +355,13 @@ async function handleSave() {
   } catch {
     return showToast("Enter a valid URL", "error");
   }
+  if (getLogoSrc(config.logo) && !logoId) {
+    return showToast("Re-upload your logo to save", "error");
+  }
 
   saveBtn.disabled = true;
   try {
-    const payload = { name, targetUrl, config };
+    const payload = { name, targetUrl, config: configForSave(config) };
     if (savedQr) {
       savedQr = (await api.updateQrCode(savedQr.id, payload)).qrCode;
       showToast("Changes saved", "success");
@@ -380,11 +395,3 @@ function showToast(text, type = "info") {
   showToast.timer = setTimeout(() => toastEl.classList.remove("is-visible"), 3200);
 }
 
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}

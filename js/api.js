@@ -23,4 +23,16 @@ export const api = {
   createQrCode: (payload) => request("/qr", { method: "POST", body: JSON.stringify(payload) }),
   updateQrCode: (id, payload) => request(`/qr/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteQrCode: (id) => request(`/qr/${id}`, { method: "DELETE" }),
+  uploadLogo: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/logos`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  },
 };
