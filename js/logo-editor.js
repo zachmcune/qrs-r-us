@@ -1,3 +1,5 @@
+import { getLogoSrc } from "./logo-utils.js";
+
 const SNAP_THRESHOLD = 5;
 
 function normalizeQrRegion(region, canvas) {
@@ -167,12 +169,23 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
   }
 
   return {
-    sync(config, canvasEl, region = null) {
-      canvas = canvasEl;
-      qrRegion = region;
-      const normalized = normalizeQrRegion(region, canvasEl);
-      const qrWidth = normalized.width || 1;
-      if (!config.logo?.dataUrl || !canvas) {
+sync(config, canvasEl, region = null) {
+  canvas = canvasEl;
+  qrRegion = region;
+  const normalized = normalizeQrRegion(region, canvasEl);
+  const qrWidth = normalized.width || 1;
+  const logoSrc = getLogoSrc(config.logo);
+  if (!logoSrc || !canvas) {
+    handle.hidden = true;
+    hideGuides();
+    return;
+  }
+
+  lastLogo = config.logo;
+  handle.hidden = false;
+  const img = handle.querySelector("img");
+  img.src = logoSrc;
+  // ... rest stays from main (handle.dataset, placeHandle, applyHandleBorder, etc.)
         handle.hidden = true;
         hideGuides();
         return;
@@ -180,8 +193,7 @@ export function createLogoEditor({ stage, handle, guides, snapLabel, onChange })
 
       lastLogo = config.logo;
       handle.hidden = false;
-      const img = handle.querySelector("img");
-      img.src = config.logo.dataUrl;
+      handle.querySelector("img").src = logoSrc;
       handle.dataset.logoSize = config.logo.size;
       handle.dataset.borderPad = (config.logo.borderWidth || 0) / qrWidth;
       handle.style.borderRadius = `${config.logo.borderRadius * 100}%`;
