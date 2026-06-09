@@ -23,7 +23,7 @@
       <div class="canvas-toolbar">
         <div class="canvas-toolbar__left">
           <h1>Preview</h1>
-          <p>Drag your logo to position it. It snaps to center automatically.</p>
+          <p>Design a shareable card with your QR code, company name, and more.</p>
         </div>
         <div class="export-group">
           <span class="export-group__label">Download</span>
@@ -59,6 +59,7 @@
           <button type="button" class="tab is-active" data-tab="link" role="tab">Link</button>
           <button type="button" class="tab" data-tab="logo" role="tab">Logo</button>
           <button type="button" class="tab" data-tab="style" role="tab">Style</button>
+          <button type="button" class="tab" data-tab="card" role="tab">Card</button>
         </nav>
 
         <div id="panel-link" class="tab-panel is-active" role="tabpanel">
@@ -169,6 +170,16 @@
         </div>
 
         <div id="panel-style" class="tab-panel" role="tabpanel">
+          <p class="panel-intro">Pick a QR look, then fine-tune colors and shapes below.</p>
+
+          <div class="field">
+            <label>QR preset</label>
+            <div id="qr-preset-picker" class="preset-picker" role="radiogroup" aria-label="QR code style presets"></div>
+            <span class="field__hint" id="qr-preset-description">One-click themes for your QR code modules.</span>
+          </div>
+
+          <input type="hidden" name="qrPreset" value="classic">
+
           <div class="color-grid">
             <div class="field field--color">
               <label>QR color</label>
@@ -195,6 +206,44 @@
             <label>Error correction</label>
             <select name="errorCorrectionLevel"></select>
             <span class="field__hint">Use High when placing a logo over the code.</span>
+          </div>
+        </div>
+
+        <div id="panel-card" class="tab-panel" role="tabpanel">
+          <p class="panel-intro">Build a branded card around your QR code — great for print, social posts, and storefront displays.</p>
+
+          <div class="field">
+            <div class="field__row">
+              <label>Card background</label>
+              <button type="button" id="shuffle-pattern" class="btn btn--ghost btn--small" hidden>
+                Shuffle pattern
+              </button>
+            </div>
+            <div id="template-picker" class="template-picker" role="radiogroup" aria-label="Card background templates"></div>
+            <span class="field__hint" id="template-description">Patterns generate a unique layout every time you shuffle.</span>
+          </div>
+
+          <input type="hidden" name="cardEnabled" value="true">
+          <input type="hidden" name="cardTemplate" value="light">
+          <input type="hidden" name="cardPatternSeed" value="0">
+
+          <div id="card-fields">
+            <div class="field">
+              <label for="cardCompanyName">Company or title</label>
+              <input type="text" id="cardCompanyName" name="cardCompanyName" placeholder="e.g. Acme Coffee Co.">
+            </div>
+            <div class="field">
+              <label for="cardSubtitle">Subtitle</label>
+              <input type="text" id="cardSubtitle" name="cardSubtitle" placeholder="e.g. Fresh roasts since 2012">
+            </div>
+            <div class="field">
+              <label for="cardFooter">Call to action</label>
+              <input type="text" id="cardFooter" name="cardFooter" placeholder="Scan to visit our website">
+            </div>
+            <div class="field field--color">
+              <label for="cardTextColor">Text color</label>
+              <input type="color" id="cardTextColor" name="cardTextColor" value="#1a1a2e">
+            </div>
           </div>
         </div>
 

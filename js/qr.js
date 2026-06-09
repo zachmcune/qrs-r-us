@@ -1,11 +1,14 @@
 import QRCodeStyling from "https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/+esm";
 import { getLogoSrc } from "./logo-utils.js";
+import { defaultCard } from "./card.js";
 
 const DOT_STYLES = ["square", "dots", "rounded", "extra-rounded", "classy", "classy-rounded"];
 const CORNER_STYLES = ["square", "dot", "extra-rounded"];
 const ERROR_LEVELS = ["L", "M", "Q", "H"];
 
 export const defaults = {
+  qrPreset: "classic",
+  card: { ...defaultCard },
   foregroundColor: "#1a1a2e",
   backgroundColor: "#ffffff",
   dotStyle: "rounded",
@@ -130,13 +133,7 @@ function loadImage(src) {
 
 export async function renderQr(data, config, size = 512) {
   const base = await qrBaseCanvas(data, config, size);
-  const composed = document.createElement("canvas");
-  composed.width = base.width;
-  composed.height = base.height;
-  const ctx = composed.getContext("2d");
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(base, 0, 0);
-  return drawLogoOnCanvas(composed, config);
+  return drawLogoOnCanvas(base, config);
 }
 
 export async function renderQrSvg(data, config, size = 512) {
@@ -218,8 +215,41 @@ export async function renderQrSvg(data, config, size = 512) {
   return svg;
 }
 
+export function normalizeConfig(config) {
+  const merged = { ...config };
+  if (!merged.card && merged.template) {
+    merged.card = {
+      enabled: merged.template !== "none" && merged.template !== "custom",
+      template: merged.template === "custom" ? "light" : merged.template,
+      patternSeed: merged.patternSeed || 0,
+      companyName: "",
+      subtitle: "",
+      footer: defaultCard.footer,
+      textColor: merged.foregroundColor || defaultCard.textColor,
+    };
+  }
+  if (merged.card && merged.card.enabled === undefined) {
+    merged.card.enabled = merged.card.template !== "none";
+  }
+  return merged;
+}
+
+function migrateLegacyConfig(config) {
+  return normalizeConfig(config);
+}
+
 export function readConfigFromForm(form, logoPreviewSrc = null, logoId = null) {
-  return {
+  return migrateLegacyConfig({
+    qrPreset: form.qrPreset?.value || "classic",
+    card: {
+      enabled: form.cardEnabled?.value !== "false",
+      template: form.cardTemplate?.value || "light",
+      patternSeed: Number(form.cardPatternSeed?.value) || 0,
+      companyName: form.cardCompanyName?.value || "",
+      subtitle: form.cardSubtitle?.value || "",
+      footer: form.cardFooter?.value || defaultCard.footer,
+      textColor: form.cardTextColor?.value || defaultCard.textColor,
+    },
     foregroundColor: form.foregroundColor.value,
     backgroundColor: form.backgroundColor.value,
     dotStyle: form.dotStyle.value,
@@ -236,20 +266,33 @@ export function readConfigFromForm(form, logoPreviewSrc = null, logoId = null) {
       borderColor: form.logoBorderColor.value,
       borderRadius: Number(form.logoBorderRadius.value) / 100,
     },
-  };
+  });
 }
 
 export function applyConfigToForm(form, config) {
-  form.foregroundColor.value = config.foregroundColor;
-  form.backgroundColor.value = config.backgroundColor;
-  form.dotStyle.value = config.dotStyle;
-  form.cornerSquareStyle.value = config.cornerSquareStyle;
-  form.cornerDotStyle.value = config.cornerDotStyle;
-  form.errorCorrectionLevel.value = config.errorCorrectionLevel;
-  form.logoSize.value = Math.round(config.logo.size * 100);
-  form.logoOffsetX.value = Math.round(config.logo.offsetX * 100);
-  form.logoOffsetY.value = Math.round(config.logo.offsetY * 100);
-  form.logoBorderWidth.value = config.logo.borderWidth;
-  form.logoBorderColor.value = config.logo.borderColor;
-  form.logoBorderRadius.value = Math.round(config.logo.borderRadius * 100);
+  const normalized = migrateLegacyConfig({ ...config, logo: { ...defaults.logo, ...config.logo } });
+  const card = { ...defaultCard, ...normalized.card };
+
+  if (form.cardEnabled) form.cardEnabled.value = card.enabled ? "true" : "false";
+  if (form.cardTemplate) form.cardTemplate.value = card.template;
+  if (form.cardPatternSeed) form.cardPatternSeed.value = card.patternSeed || 0;
+  if (form.cardCompanyName) form.cardCompanyName.value = card.companyName || "";
+  if (form.cardSubtitle) form.cardSubtitle.value = card.subtitle || "";
+  if (form.cardFooter) form.cardFooter.value = card.footer || defaultCard.footer;
+  if (form.cardTextColor) form.cardTextColor.value = card.textColor || defaultCard.textColor;
+  if (form.qrPreset) form.qrPreset.value = normalized.qrPreset || "classic";
+
+  form.foregroundColor.value = normalized.foregroundColor;
+  form.backgroundColor.value = normalized.backgroundColor;
+  form.dotStyle.value = normalized.dotStyle;
+  form.cornerSquareStyle.value = normalized.cornerSquareStyle;
+  form.cornerDotStyle.value = normalized.cornerDotStyle;
+  form.errorCorrectionLevel.value = normalized.errorCorrectionLevel;
+  const logo = normalized.logo || defaults.logo;
+  form.logoSize.value = Math.round(logo.size * 100);
+  form.logoOffsetX.value = Math.round(logo.offsetX * 100);
+  form.logoOffsetY.value = Math.round(logo.offsetY * 100);
+  form.logoBorderWidth.value = logo.borderWidth;
+  form.logoBorderColor.value = logo.borderColor ?? "#ffffff";
+  form.logoBorderRadius.value = Math.round((logo.borderRadius ?? 0.2) * 100);
 }
