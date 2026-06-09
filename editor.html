@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create QR code — QR's R Us</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-editor">
+  <header class="site-header">
+    <a href="index.html" class="brand">
+      <span class="brand__mark">QR</span>
+      <span class="brand__name">QR's R Us</span>
+    </a>
+    <nav id="auth-status" class="auth-status"></nav>
+  </header>
+
+  <main class="editor">
+    <section class="editor__canvas">
+      <div class="canvas-toolbar">
+        <div class="canvas-toolbar__left">
+          <h1>Preview</h1>
+          <p>Drag your logo to position it. It snaps to center automatically.</p>
+        </div>
+        <div class="export-group">
+          <span class="export-group__label">Download</span>
+          <button type="button" id="export-png" class="btn btn--ghost btn--small">PNG</button>
+          <button type="button" id="export-svg" class="btn btn--ghost btn--small">SVG</button>
+          <button type="button" id="export-pdf" class="btn btn--ghost btn--small">PDF</button>
+        </div>
+      </div>
+
+      <div id="canvas-stage" class="canvas-stage is-empty">
+        <div id="center-guides" class="center-guides">
+          <div class="center-guides__h"></div>
+          <div class="center-guides__v"></div>
+          <div class="center-guides__dot"></div>
+        </div>
+        <div id="preview" class="preview">
+          <div class="empty-state">
+            <div class="empty-state__icon">◫</div>
+            <p>Enter your website URL to begin</p>
+          </div>
+        </div>
+        <div id="logo-handle" class="logo-handle" hidden>
+          <img alt="">
+          <div class="logo-handle__ring"></div>
+        </div>
+        <div id="snap-label" class="snap-label" hidden>Snapped to center</div>
+      </div>
+    </section>
+
+    <aside class="editor__sidebar">
+      <form id="qr-form" class="sidebar-form">
+        <nav class="tabs" role="tablist">
+          <button type="button" class="tab is-active" data-tab="link" role="tab">Link</button>
+          <button type="button" class="tab" data-tab="logo" role="tab">Logo</button>
+          <button type="button" class="tab" data-tab="style" role="tab">Style</button>
+        </nav>
+
+        <div id="panel-link" class="tab-panel is-active" role="tabpanel">
+          <div class="field">
+            <label for="name">Project name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Summer Campaign" required>
+          </div>
+          <div class="field">
+            <label for="targetUrl">Website URL</label>
+            <input type="url" id="targetUrl" name="targetUrl" placeholder="https://yourwebsite.com" required>
+            <span class="field__hint">This is where people go when they scan your code.</span>
+          </div>
+        </div>
+
+        <div id="panel-logo" class="tab-panel" role="tabpanel">
+          <div id="upload-zone" class="upload-zone">
+            <input type="file" id="logo-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+            <div class="upload-zone__placeholder">
+              <span class="upload-zone__icon">↑</span>
+              <strong>Drop your logo here</strong>
+              <span>or click to browse · PNG, JPG, WebP, SVG</span>
+            </div>
+            <img class="upload-zone__preview" alt="" hidden>
+          </div>
+
+          <div class="logo-actions">
+            <button type="button" id="center-logo" class="btn btn--ghost btn--small" hidden>
+              ⊹ Center logo
+            </button>
+            <button type="button" id="clear-logo" class="btn btn--ghost btn--small" hidden>
+              Remove
+            </button>
+          </div>
+
+          <div class="field field--range">
+            <div class="field__row">
+              <label for="logoSize">Logo size</label>
+              <span class="field__value" data-for="logoSize">22%</span>
+            </div>
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>Small</span>
+                <span>Large</span>
+              </div>
+              <input type="range" id="logoSize" name="logoSize" min="10" max="35" value="22" aria-valuetext="22%">
+            </div>
+          </div>
+          <div class="field field--range">
+            <div class="field__row">
+              <label for="logoBorderWidth">Border width</label>
+              <span class="field__value" data-for="logoBorderWidth">6px</span>
+            </div>
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>None</span>
+                <span>Thick</span>
+              </div>
+              <input type="range" id="logoBorderWidth" name="logoBorderWidth" min="0" max="16" value="6" aria-valuetext="6 pixels">
+            </div>
+          </div>
+          <div class="field field--range">
+            <div class="field__row">
+              <label for="logoBorderRadius">Corner roundness</label>
+              <span class="field__value" data-for="logoBorderRadius">20%</span>
+            </div>
+            <div class="range-control">
+              <div class="range-control__hints">
+                <span>Square</span>
+                <span>Round</span>
+              </div>
+              <input type="range" id="logoBorderRadius" name="logoBorderRadius" min="0" max="50" value="20" aria-valuetext="20%">
+            </div>
+          </div>
+          <div class="field field--color">
+            <label>Border color</label>
+            <input type="color" name="logoBorderColor" value="#ffffff">
+          </div>
+
+          <div id="position-controls" class="position-controls" hidden>
+            <p class="position-controls__intro">Drag the logo on the preview, or use these sliders to nudge it from center.</p>
+            <div class="field field--range">
+              <div class="field__row">
+                <label for="logoOffsetX">Horizontal position</label>
+                <span class="field__value" data-for="logoOffsetX">Centered</span>
+              </div>
+              <div class="range-control range-control--centered">
+                <span class="range-control__end">Left</span>
+                <div class="range-control__track">
+                  <input type="range" id="logoOffsetX" class="range--centered" name="logoOffsetX" min="-50" max="50" value="0" aria-valuetext="Centered">
+                </div>
+                <span class="range-control__end">Right</span>
+              </div>
+            </div>
+            <div class="field field--range">
+              <div class="field__row">
+                <label for="logoOffsetY">Vertical position</label>
+                <span class="field__value" data-for="logoOffsetY">Centered</span>
+              </div>
+              <div class="range-control range-control--centered">
+                <span class="range-control__end">Up</span>
+                <div class="range-control__track">
+                  <input type="range" id="logoOffsetY" class="range--centered" name="logoOffsetY" min="-50" max="50" value="0" aria-valuetext="Centered">
+                </div>
+                <span class="range-control__end">Down</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-style" class="tab-panel" role="tabpanel">
+          <div class="color-grid">
+            <div class="field field--color">
+              <label>QR color</label>
+              <input type="color" name="foregroundColor" value="#1a1a2e">
+            </div>
+            <div class="field field--color">
+              <label>Background</label>
+              <input type="color" name="backgroundColor" value="#ffffff">
+            </div>
+          </div>
+          <div class="field">
+            <label>Dot style</label>
+            <select name="dotStyle"></select>
+          </div>
+          <div class="field">
+            <label>Corner squares</label>
+            <select name="cornerSquareStyle"></select>
+          </div>
+          <div class="field">
+            <label>Corner dots</label>
+            <select name="cornerDotStyle"></select>
+          </div>
+          <div class="field">
+            <label>Error correction</label>
+            <select name="errorCorrectionLevel"></select>
+            <span class="field__hint">Use High when placing a logo over the code.</span>
+          </div>
+        </div>
+
+        <button type="button" id="save-btn" class="btn btn--primary btn--full">Save QR code</button>
+      </form>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

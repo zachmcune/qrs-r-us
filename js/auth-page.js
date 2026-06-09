@@ -3,7 +3,7 @@ import { api } from "./api.js";
 const form = document.getElementById("auth-form");
 const messageEl = document.getElementById("message");
 const isSignup = document.body.dataset.mode === "signup";
-const next = new URLSearchParams(location.search).get("next") || "index.html";
+const next = new URLSearchParams(location.search).get("next") || "dashboard.html";
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
